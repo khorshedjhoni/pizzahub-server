@@ -15,7 +15,7 @@ app.use(
   })
 );
 
-// Stripe webhook MUST receive raw body BEFORE express.json()
+
 app.post(
   "/api/payments/webhook",
   express.raw({ type: "application/json" }),
