@@ -4,7 +4,8 @@ import env from "../config/env.js";
 import { getDb } from "../config/db.js";
 import ApiError from "../utils/ApiError.js";
 
-const JWKS = createRemoteJWKSet(new URL(`${env.BETTER_AUTH_URL}/api/auth/jwks`));
+const authBaseUrl = env.BETTER_AUTH_URL?.replace(/\/$/, "");
+const JWKS = createRemoteJWKSet(new URL(`${authBaseUrl}/api/auth/jwks`));
 
 export const verifyToken = async (req, res, next) => {
   try {
@@ -19,10 +20,9 @@ export const verifyToken = async (req, res, next) => {
     }
 
     const { payload } = await jwtVerify(token, JWKS, {
-      issuer: env.BETTER_AUTH_URL,
-      audience: env.BETTER_AUTH_URL,
+      issuer: authBaseUrl,
+      audience: authBaseUrl,
     });
-    console.error("verifyToken failed:", err?.code || err?.name, err?.message);
 
     const db = getDb();
     const rawUserId = payload.sub || payload.id;
