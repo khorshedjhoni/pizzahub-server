@@ -10,14 +10,26 @@ const client = new MongoClient(env.MONGO_URI, {
 });
 
 let db;
+let connectingPromise = null;
 
 export async function connectDB() {
-  if (!db) {
-    await client.connect();
-    db = client.db(env.DB_NAME);
-    console.log(`Connected to MongoDB: ${env.DB_NAME}`);
+  if (db) return db;
+
+  if (!connectingPromise) {
+    connectingPromise = client
+      .connect()
+      .then(() => {
+        db = client.db(env.DB_NAME);
+        console.log(`Connected to MongoDB: ${env.DB_NAME}`);
+        return db;
+      })
+      .catch((err) => {
+        connectingPromise = null;
+        throw err;
+      });
   }
-  return db;
+
+  return connectingPromise;
 }
 
 export function getDb() {
