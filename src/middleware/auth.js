@@ -13,19 +13,37 @@ export const verifyToken = async (req, res, next) => {
       throw new ApiError(401, "Unauthorized: Missing or invalid token");
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1]?.trim();
+    if (!token || token === "undefined" || token === "null") {
+      throw new ApiError(401, "Unauthorized: Missing or invalid token");
+    }
+
     const { payload } = await jwtVerify(token, JWKS, {
       issuer: env.BETTER_AUTH_URL,
       audience: env.BETTER_AUTH_URL,
     });
 
     const db = getDb();
-    const userId = payload.sub || payload.id;
-    const query = ObjectId.isValid(userId)
-      ? { $or: [{ _id: new ObjectId(userId) }, { id: userId }] }
-      : { email: payload.email };
+    const rawUserId = payload.sub || payload.id;
+    const userId = typeof rawUserId === "string" ? rawUserId : String(rawUserId || "");
+    const isHexObjectId = /^[a-fA-F0-9]{24}$/.test(userId);
 
-    const dbUser = await db.collection("user").findOne(query);
+    const conditions = [];
+    if (isHexObjectId) {
+      conditions.push({ _id: new ObjectId(userId) });
+    }
+    if (userId) {
+      conditions.push({ _id: userId }, { id: userId });
+    }
+    if (payload.email) {
+      conditions.push({ email: payload.email });
+    }
+
+    if (conditions.length === 0) {
+      throw new ApiError(401, "Unauthorized: Invalid token subject");
+    }
+
+    const dbUser = await db.collection("user").findOne({ $or: conditions });
     if (!dbUser) {
       throw new ApiError(401, "Unauthorized: User not found");
     }
@@ -46,6 +64,7 @@ export const verifyToken = async (req, res, next) => {
 
     next();
   } catch (err) {
+    console.error("verifyToken failed:", err?.code || err?.name, err?.message);
     if (err instanceof ApiError) return next(err);
     next(new ApiError(401, "Unauthorized: Invalid or expired token"));
   }
