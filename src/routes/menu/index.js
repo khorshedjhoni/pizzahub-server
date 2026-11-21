@@ -190,7 +190,7 @@ router.post("/", verifyToken, authorizeRole("vendor"), async (req, res, next) =>
   }
 });
 
-// Vendor: Update own menu item or toggle availability
+// Vendor: Update own menu item or toggle availability by
 router.patch("/:id", verifyToken, authorizeRole("vendor"), async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -249,7 +249,7 @@ router.patch("/:id", verifyToken, authorizeRole("vendor"), async (req, res, next
   }
 });
 
-// Admin: Approve, reject, or change published status of any menu item
+
 router.patch(
   "/admin/:id/status",
   verifyToken,
@@ -257,7 +257,7 @@ router.patch(
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { status } = req.body; // "approved" | "rejected" | "pending"
+      const { status } = req.body; 
 
       if (!ObjectId.isValid(id)) throw new ApiError(400, "Invalid menu item ID");
       if (!["approved", "rejected", "pending"].includes(status)) {
