@@ -1,40 +1,43 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 import env from "./env.js";
 
-const client = new MongoClient(env.MONGO_URI, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-});
+const globalForDb = globalThis;
 
-let db;
-let connectingPromise = null;
+if (!globalForDb._pizzahubMongoClient) {
+  globalForDb._pizzahubMongoClient = new MongoClient(env.MONGO_URI, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+    serverSelectionTimeoutMS: 10000,
+  });
+}
+
+const client = globalForDb._pizzahubMongoClient;
 
 export async function connectDB() {
-  if (db) return db;
-
-  if (!connectingPromise) {
-    connectingPromise = client
-      .connect()
-      .then(() => {
-        db = client.db(env.DB_NAME);
-        console.log(`Connected to MongoDB: ${env.DB_NAME}`);
-        return db;
-      })
-      .catch((err) => {
-        connectingPromise = null;
-        throw err;
-      });
+  if (!globalForDb._pizzahubDb) {
+    if (!globalForDb._pizzahubConnectPromise) {
+      globalForDb._pizzahubConnectPromise = client
+        .connect()
+        .then(() => {
+          globalForDb._pizzahubDb = client.db(env.DB_NAME);
+          return globalForDb._pizzahubDb;
+        })
+        .catch((err) => {
+          globalForDb._pizzahubConnectPromise = null;
+          throw err;
+        });
+    }
+    return globalForDb._pizzahubConnectPromise;
   }
-
-  return connectingPromise;
+  return globalForDb._pizzahubDb;
 }
 
 export function getDb() {
-  if (!db) {
+  if (!globalForDb._pizzahubDb) {
     throw new Error("Database not initialized. Call connectDB() first.");
   }
-  return db;
+  return globalForDb._pizzahubDb;
 }

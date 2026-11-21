@@ -22,6 +22,7 @@ export const verifyToken = async (req, res, next) => {
       issuer: env.BETTER_AUTH_URL,
       audience: env.BETTER_AUTH_URL,
     });
+    console.error("verifyToken failed:", err?.code || err?.name, err?.message);
 
     const db = getDb();
     const rawUserId = payload.sub || payload.id;
