@@ -13,3 +13,39 @@
   <a href="https://github.com/khorshedjhoni/pizzahub-client">💻 Client Repository</a> •
   <a href="https://github.com/khorshedjhoni/pizzahub-server">⚙️ Server Repository</a>
 </p>
+
+### Backend NPM Packages
+
+```text
+express
+mongodb
+jose
+stripe
+cors
+dotenv
+```
+
+### External Services
+
+| Service       | Purpose                      |
+| ------------- | ---------------------------- |
+| MongoDB Atlas | Cloud database               |
+| Better Auth   | Authentication               |
+| Google OAuth  | Social login                 |
+| ImgBB         | Menu image hosting           |
+| Stripe        | Vendor subscription payments |
+| Vercel        | Frontend deployment          |
+| Render        | Backend deployment           |
+
+---
+
+
+### 3. Install Server Dependencies
+
+Open another terminal:
+
+```bash
+cd pizzahub-server
+
+npm install
+```
