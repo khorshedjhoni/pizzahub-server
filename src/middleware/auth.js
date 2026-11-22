@@ -23,7 +23,7 @@ export const verifyToken = async (req, res, next) => {
       issuer: authBaseUrl,
       audience: authBaseUrl,
     });
-    // console.log("verifyToken payload:", payload);
+   
     const db = getDb();
     const rawUserId = payload.sub || payload.id;
     const userId = typeof rawUserId === "string" ? rawUserId : String(rawUserId || "");
