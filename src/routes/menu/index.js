@@ -102,7 +102,7 @@ router.get(
   }
 );
 
-// Private: Single menu item details (must be logged in)
+// Private: Single menu item details kintu user must be logged in
 router.get("/:id", verifyToken, async (req, res, next) => {
   try {
     const { id } = req.params;
