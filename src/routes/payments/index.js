@@ -11,7 +11,7 @@ import sendResponse from "../../utils/apiResponse.js";
 
 const router = Router();
 
-// Vendor: Create Stripe Checkout Session for Premium Plan for
+// Create Stripe Checkout Session for Premium Plan for vendors
 router.post(
   "/checkout-session",
   verifyToken,

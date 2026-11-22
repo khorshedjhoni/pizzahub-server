@@ -249,7 +249,7 @@ router.patch("/:id", verifyToken, authorizeRole("vendor"), async (req, res, next
   }
 });
 
-
+// Admin: Update menu item status (approved / rejected / pending)
 router.patch(
   "/admin/:id/status",
   verifyToken,
