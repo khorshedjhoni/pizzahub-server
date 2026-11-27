@@ -21,6 +21,105 @@ router.get("/me", verifyToken, async (req, res, next) => {
   }
 });
 
+// Customer: Get logged-in customer's favorite menu items
+router.get(
+  "/me/favorites",
+  verifyToken,
+  authorizeRole("customer"),
+  async (req, res, next) => {
+    try {
+      const db = getDb();
+      const userId = new ObjectId(req.user.id);
+
+      const currentUser = await db
+        .collection("user")
+        .findOne({ _id: userId }, { projection: { favorites: 1 } });
+
+      const favoriteIds = Array.isArray(currentUser?.favorites)
+        ? currentUser.favorites.map(String)
+        : [];
+
+      const objectIds = favoriteIds
+        .filter((id) => ObjectId.isValid(id))
+        .map((id) => new ObjectId(id));
+
+      if (objectIds.length === 0) {
+        return sendResponse(res, { data: [] });
+      }
+
+      const items = await db
+        .collection("menuItems")
+        .find({
+          _id: { $in: objectIds },
+          status: "approved",
+          isAvailable: true,
+        })
+        .toArray();
+
+      sendResponse(res, { data: items });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Customer: Toggle a menu item in favorites (add or remove)
+router.post(
+  "/me/favorites/:itemId",
+  verifyToken,
+  authorizeRole("customer"),
+  async (req, res, next) => {
+    try {
+      const { itemId } = req.params;
+      if (!ObjectId.isValid(itemId)) {
+        throw new ApiError(400, "Invalid menu item ID");
+      }
+
+      const db = getDb();
+      const item = await db
+        .collection("menuItems")
+        .findOne({ _id: new ObjectId(itemId) });
+
+      if (!item) {
+        throw new ApiError(404, "Menu item not found");
+      }
+
+      const userId = new ObjectId(req.user.id);
+      const currentUser = await db
+        .collection("user")
+        .findOne({ _id: userId }, { projection: { favorites: 1 } });
+
+      const existingFavorites = Array.isArray(currentUser?.favorites)
+        ? currentUser.favorites.map(String)
+        : [];
+      const isAlreadyFavorite = existingFavorites.includes(itemId);
+
+      const updateQuery = isAlreadyFavorite
+        ? { $pull: { favorites: itemId } }
+        : { $addToSet: { favorites: itemId } };
+
+      await db.collection("user").updateOne({ _id: userId }, updateQuery);
+
+      const updatedFavorites = isAlreadyFavorite
+        ? existingFavorites.filter((id) => id !== itemId)
+        : [...existingFavorites, itemId];
+
+      sendResponse(res, {
+        message: isAlreadyFavorite
+          ? "Removed from favorites"
+          : "Added to favorites",
+        data: {
+          itemId,
+          isFavorite: !isAlreadyFavorite,
+          favorites: updatedFavorites,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 // Update current user profile (cannot self-change role or subscriptionPlan here)
 router.patch("/me", verifyToken, async (req, res, next) => {
   try {
